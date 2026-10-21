@@ -1,0 +1,12 @@
+.env
+.env.*
+.git
+.venv
+venv
+__pycache__
+*.pyc
+.pytest_cache
+.test-tmp
+pytest-cache-files-*
+chroma_data
+artifacts

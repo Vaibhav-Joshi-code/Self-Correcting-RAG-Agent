@@ -1,0 +1,30 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Generated vector database
+chroma_data/
+chroma.sqlite3
+
+# Testing and tooling
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+pytest-cache-files-*/
+.test-tmp/
+artifacts/
+*.egg-info/
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
