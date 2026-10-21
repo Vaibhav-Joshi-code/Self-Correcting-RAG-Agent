@@ -1,0 +1,11 @@
+fastapi>=0.115,<1
+uvicorn[standard]>=0.34,<1
+langchain-openai>=0.3.19,<2
+openai>=1.86,<3
+langchain-text-splitters>=0.3.8,<2
+langgraph>=0.2.76,<2
+langsmith>=0.4,<1
+chromadb>=1.0,<2
+pydantic>=2.10,<3
+pydantic-settings>=2.7,<3
+httpx>=0.28,<1
