@@ -1,0 +1,3 @@
+# ChaiTech Remote Work Policy
+
+This fictional policy permits employees to work from home up to three days per week. Remote work requires the employee's manager's approval. The employee and manager should agree on the remote days in advance. Employees should normally attend the office on the remaining scheduled workdays. While working remotely, employees must remain available during the core collaboration hours of 10 AM to 4 PM in their team's agreed local time zone. Employees must use a company-managed device, protect confidential information, and follow the security policy. Remote work does not automatically permit international relocation or working from any country; this document does not define an overseas-work approval process.
