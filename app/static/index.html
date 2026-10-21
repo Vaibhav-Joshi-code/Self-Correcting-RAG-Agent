@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Self-Correcting RAG</title>
+  <style>
+    :root{color-scheme:light;font-family:system-ui,sans-serif;color:#162b37;background:#f3f6f7}
+    body{max-width:1000px;margin:36px auto;padding:0 20px}h1{font-size:2.1rem;margin-bottom:8px}
+    .muted{color:#526671}section,details{background:white;border:1px solid #d7e0e4;border-radius:12px;padding:20px;margin:16px 0}
+    label{display:block;font-weight:600;margin:12px 0 6px}textarea,input{box-sizing:border-box;width:100%;padding:12px;font:inherit;border:1px solid #a9bac3;border-radius:7px}
+    button{background:#075b64;color:white;border:0;border-radius:7px;padding:12px 20px;font:inherit;margin-top:12px;cursor:pointer}button:disabled{opacity:.5;cursor:wait}
+    .examples{display:flex;flex-wrap:wrap;gap:8px}.examples button{background:#e4f0f1;color:#17434c;padding:8px 12px;font-size:.9rem}
+    pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;line-height:1.6}.badge{font-weight:bold;color:#076351}.failure{color:#a1362b}
+    table{width:100%;border-collapse:collapse}th,td{text-align:left;border-bottom:1px solid #dde5e8;padding:9px}summary{cursor:pointer;font-weight:600}a{color:#075b64}#message{min-height:24px}
+  </style>
+</head>
+<body>
+  <p class="muted">EURIAI · Chroma · LangGraph · LangSmith</p>
+  <h1>Self-Correcting RAG</h1>
+  <p class="muted">Ask about the fictional ChaiTech policies. Review the evidence and each validation attempt.</p>
+  <section>
+    <form id="form">
+      <label for="question">Your question</label>
+      <textarea id="question" rows="3" maxlength="4000" required>How many annual leave days do employees receive, and what are the carry-forward rules?</textarea>
+      <div class="examples">
+        <button type="button" data-q="What is the annual learning budget and how do I claim it?">Learning budget</button>
+        <button type="button" data-q="What are the domestic travel meal and hotel limits, and when must I submit receipts?">Travel rules</button>
+        <button type="button" data-q="What was ChaiTech's revenue in 2025?">Missing evidence</button>
+      </div>
+      <details><summary>API access</summary><label for="key">App API key (if enabled)</label><input id="key" type="password" autocomplete="off"><p class="muted">Use the app's API_KEY here. Configure EURIAI and LangSmith keys on the server.</p></details>
+      <button id="submit">Ask and validate</button>
+    </form>
+    <p id="message" role="status" aria-live="polite"></p>
+  </section>
+  <div id="result" aria-live="polite"></div>
+  <p class="muted">Demo corpus: fictional policies. <a href="/docs">API documentation</a> · Validation reduces unsupported answers but cannot guarantee correctness.</p>
+<script>
+const $ = id => document.getElementById(id);
+const node = (tag, text) => {const n=document.createElement(tag); if(text!==undefined)n.textContent=text; return n;};
+document.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{$('question').value=b.dataset.q;});
+$('form').onsubmit=async event=>{
+  event.preventDefault(); $('submit').disabled=true; $('result').replaceChildren();
+  $('message').textContent='Retrieving evidence and validating the answer. Retries can take several minutes.';
+  try{
+    const headers={'Content-Type':'application/json'}; if($('key').value)headers['X-API-Key']=$('key').value;
+    const response=await fetch('/ask',{method:'POST',headers,body:JSON.stringify({question:$('question').value})});
+    const data=await response.json(); if(!response.ok)throw new Error(typeof data.detail==='string'?data.detail:JSON.stringify(data.detail));
+    $('message').textContent=`${data.attempts} attempt(s) · ${data.elapsed_seconds}s · Request ${data.request_id}`;
+    const answer=node('section'); const badge=node('p',data.accepted?'Accepted after validation':'Abstained — validation did not pass');badge.className=data.accepted?'badge':'badge failure';answer.append(badge,node('pre',data.answer));$('result').append(answer);
+    data.history.forEach(attempt=>{
+      const detail=node('details');detail.open=!attempt.accepted;detail.append(node('summary',`Attempt ${attempt.attempt} — ${attempt.accepted?'accepted':'rejected'}`));
+      detail.append(node('p',`Search: ${attempt.search_query}`),node('p',`Requested chunks: ${attempt.retrieval_k}`));
+      const table=node('table');const row=node('tr');row.append(node('th','Check'),node('th','Score / 5'));table.append(row);
+      ['retrieval_relevance','grounding','hallucination_risk','completeness'].forEach(key=>{const row=node('tr');row.append(node('td',key.replaceAll('_',' ')),node('td',String(attempt.evaluation[key])));table.append(row);});
+      detail.append(table,node('p','Hallucination risk: lower is better.'),node('p',attempt.evaluation.reason));
+      if(attempt.validation_errors.length)detail.append(node('p',attempt.validation_errors.join('; ')));
+      detail.append(node('h3','Draft answer'),node('pre',attempt.answer||'(No draft: evidence was empty)'));
+      attempt.sources.forEach(source=>{const evidence=node('details');evidence.append(node('summary',`[${source.id}] ${source.source}`),node('pre',source.content));detail.append(evidence);});$('result').append(detail);
+    });
+    if(data.trace_id)$('result').append(node('p',`LangSmith trace ID: ${data.trace_id}`));
+    const raw=node('details');raw.append(node('summary','Full response JSON'),node('pre',JSON.stringify(data,null,2)));$('result').append(raw);
+  }catch(error){$('message').textContent=error.message;}finally{$('submit').disabled=false;}
+};
+</script>
+</body></html>

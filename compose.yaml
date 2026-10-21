@@ -1,0 +1,30 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: self-correcting-rag-api
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      CHROMA_DIR: /app/chroma_data
+      DATA_DIR: /app/data
+    volumes:
+      - chroma_data:/app/chroma_data
+      - ./data:/app/data:ro
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  chroma_data:
